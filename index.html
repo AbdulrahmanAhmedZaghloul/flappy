@@ -1,26 +1,621 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flappy-Bird | Korsat X Parmaga</title>
+    <title>Flappy Bird - لعبة الطائر الطائر</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    <!-- styles  -->
-    <link rel="shortcut icon" href="assets/img/kxp_fav.png" type="image/x-icon">
-    <link rel="stylesheet" href="assets/css/style.css">
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+            overflow: hidden;
+        }
+
+        /* Clouds animation */
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.8;
+            animation: moveCloud 15s infinite linear;
+        }
+
+        .cloud:before, .cloud:after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+        }
+
+        .cloud1 {
+            width: 80px;
+            height: 40px;
+            top: 10%;
+            left: -100px;
+        }
+
+        .cloud1:before {
+            width: 50px;
+            height: 40px;
+            top: -20px;
+            left: 10px;
+        }
+
+        .cloud1:after {
+            width: 60px;
+            height: 40px;
+            top: -15px;
+            right: 10px;
+        }
+
+        .cloud2 {
+            width: 60px;
+            height: 30px;
+            top: 20%;
+            left: -80px;
+            animation-delay: -5s;
+        }
+
+        .cloud2:before {
+            width: 40px;
+            height: 30px;
+            top: -15px;
+            left: 8px;
+        }
+
+        .cloud2:after {
+            width: 45px;
+            height: 30px;
+            top: -12px;
+            right: 8px;
+        }
+
+        @keyframes moveCloud {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(calc(100vw + 100px)); }
+        }
+
+        #game {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #obstacle {
+            width: 60px;
+            height: 100vh;
+            background: linear-gradient(180deg, #228B22 0%, #32CD32 50%, #228B22 100%);
+            position: absolute;
+            top: 0;
+            left: 100%;
+            animation: obstacle-anim 3s infinite linear;
+            z-index: 1;
+            border-radius: 10px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        #hole {
+            width: 60px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            position: absolute;
+            top: 200px;
+            left: 100%;
+            animation: obstacle-anim 3s infinite linear;
+            z-index: 2;
+            backdrop-filter: blur(2px);
+            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes obstacle-anim {
+            0% { left: 100%; }
+            100% { left: -80px; }
+        }
+
+        #bird {
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            position: absolute;
+            top: 50%;
+            left: 100px;
+            border-radius: 50%;
+            z-index: 3;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            transition: transform 0.1s ease;
+        }
+
+        #bird:before {
+            content: '🐦';
+            position: absolute;
+            font-size: 30px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #bird.jumping {
+            transform: rotate(-20deg);
+        }
+
+        #bird.falling {
+            transform: rotate(20deg);
+        }
+
+        /* UI Elements */
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 20;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+
+        #gameOver h2 {
+            margin-bottom: 20px;
+            color: #ff6b6b;
+        }
+
+        #restartBtn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+
+        #restartBtn:hover {
+            transform: scale(1.05);
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-size: 16px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+
+        /* Celebration */
+        .celebration {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ff6b6b;
+            animation: confetti-fall 3s linear infinite;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .milestone-popup {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 25;
+            animation: milestone-bounce 2s ease-out;
+            display: none;
+        }
+
+        @keyframes milestone-bounce {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Timer */
+        #timer {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+
+        /* Background music toggle */
+        #soundToggle {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+        }
+    </style>
 </head>
-
 <body>
-    <div id="game">
-        <div id="obstacle"></div>
-        <div id="hole"></div>
-        <div id="bird"></div>
+    <div id="gameContainer">
+        <!-- Animated clouds -->
+        <div class="cloud cloud1"></div>
+        <div class="cloud cloud2"></div>
+        
+        <div id="game">
+            <div id="obstacle"></div>
+            <div id="hole"></div>
+            <div id="bird"></div>
+        </div>
+
+        <!-- UI Elements -->
+        <div id="ui">
+            <div>النقاط: <span id="score">0</span></div>
+            <div>عدد العوائق: <span id="passed">0</span></div>
+        </div>
+
+        <div id="timer">⏱️ <span id="timeDisplay">00:00</span></div>
+
+        <button id="soundToggle" onclick="toggleSound()">🎵</button>
+
+        <div id="instructions">
+            <div>🖱️ انقر بالماوس للقفز</div>
+            <div>⌨️ اضغط مسطرة أو سهم لأعلى للقفز</div>
+            <div>⬇️ سهم لأسفل للنزول السريع</div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOver">
+            <h2>🎮 انتهت اللعبة!</h2>
+            <p>نقاطك النهائية: <span id="finalScore">0</span></p>
+            <p>عدد العوائق المعدية: <span id="finalPassed">0</span></p>
+            <p>الوقت: <span id="finalTime">00:00</span></p>
+            <button id="restartBtn" onclick="restartGame()">🔄 العب مرة أخرى</button>
+        </div>
+
+        <!-- Milestone popup -->
+        <div id="milestonePopup" class="milestone-popup">
+            <span id="milestoneText">🎉 عظيم! وصلت إلى 10 نقاط!</span>
+        </div>
+
+        <!-- Celebration container -->
+        <div id="celebration" class="celebration"></div>
     </div>
 
-    <!-- link JS -->
-    <script src="assets/js/main.js"></script>
-</body>
+    <script>
+        // Game variables
+        const hole = document.getElementById("hole");
+        const obstacle = document.getElementById("obstacle");
+        const bird = document.getElementById("bird");
+        const gameContainer = document.getElementById("gameContainer");
+        const gameOverScreen = document.getElementById("gameOver");
+        const milestonePopup = document.getElementById("milestonePopup");
+        const celebration = document.getElementById("celebration");
+        
+        let score = 0;
+        let passed = 0;
+        let gameRunning = true;
+        let isJumping = false;
+        let gameStartTime = Date.now();
+        let gameTime = 0;
+        let soundEnabled = true;
 
+        // Timer
+        function updateTimer() {
+            if (gameRunning) {
+                gameTime = Math.floor((Date.now() - gameStartTime) / 1000);
+                const minutes = Math.floor(gameTime / 60);
+                const seconds = gameTime % 60;
+                document.getElementById('timeDisplay').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        setInterval(updateTimer, 1000);
+
+        // Sound effects (using Web Audio API for simple beeps)
+        function playSound(frequency, duration) {
+            if (!soundEnabled) return;
+            
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundToggle').textContent = soundEnabled ? '🎵' : '🔇';
+        }
+
+        // Celebration effects
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'];
+            
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 2 + 's';
+                    celebration.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 3000);
+                }, i * 50);
+            }
+        }
+
+        function showMilestone(num) {
+            const milestoneText = document.getElementById('milestoneText');
+            milestoneText.textContent = `🎉 رائع! وصلت إلى ${num} نقطة!`;
+            milestonePopup.style.display = 'block';
+            
+            // Play celebration sound
+            playSound(523.25, 0.2); // C5
+            setTimeout(() => playSound(659.25, 0.2), 200); // E5
+            setTimeout(() => playSound(783.99, 0.4), 400); // G5
+            
+            setTimeout(() => {
+                milestonePopup.style.display = 'none';
+            }, 2000);
+            
+            createConfetti();
+        }
+
+        // Set random hole position and increase score
+        hole.addEventListener("animationiteration", () => {
+            if (!gameRunning) return;
+            
+            let rand = Math.random() * (window.innerHeight - 300);
+            hole.style.top = rand + "px";
+            passed++;
+            score += 10;
+            
+            // Update UI
+            document.getElementById('score').textContent = score;
+            document.getElementById('passed').textContent = passed;
+            
+            // Play score sound
+            playSound(440, 0.1); // A4
+            
+            // Check for milestone celebration
+            if (score > 0 && score % 100 === 0) {
+                showMilestone(score);
+            }
+        });
+
+        // Main game loop
+        const gameLoop = setInterval(function () {
+            if (!gameRunning) return;
+
+            // Apply gravity to bird
+            let birdTop = parseInt(getComputedStyle(bird).getPropertyValue("top"));
+            if (!isJumping) {
+                bird.style.top = birdTop + 4 + "px";
+                bird.className = "falling";
+            }
+
+            let obstacleLeft = parseInt(getComputedStyle(obstacle).getPropertyValue("left"));
+            let holeTop = parseInt(getComputedStyle(hole).getPropertyValue("top"));
+
+            // Collision detection
+            const gameHeight = window.innerHeight;
+            const birdLeft = 100;
+            const birdWidth = 40;
+            const birdHeight = 40;
+            const obstacleWidth = 60;
+            const holeHeight = 200;
+
+            // Game Over conditions
+            if (birdTop < 0 || birdTop > gameHeight - birdHeight ||
+                (obstacleLeft < birdLeft + birdWidth && obstacleLeft + obstacleWidth > birdLeft &&
+                 (birdTop < holeTop || birdTop + birdHeight > holeTop + holeHeight))) {
+                
+                gameOver();
+            }
+        }, 16); // ~60fps
+
+        function gameOver() {
+            gameRunning = false;
+            
+            // Play game over sound
+            playSound(220, 0.5); // A3
+            setTimeout(() => playSound(196, 0.8), 500); // G3
+            
+            // Update final scores
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalPassed').textContent = passed;
+            
+            const minutes = Math.floor(gameTime / 60);
+            const seconds = gameTime % 60;
+            document.getElementById('finalTime').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Show game over screen
+            gameOverScreen.style.display = 'block';
+            
+            // Pause animations
+            obstacle.style.animationPlayState = 'paused';
+            hole.style.animationPlayState = 'paused';
+        }
+
+        function restartGame() {
+            // Reset game state
+            gameRunning = true;
+            score = 0;
+            passed = 0;
+            gameStartTime = Date.now();
+            gameTime = 0;
+            isJumping = false;
+            
+            // Reset UI
+            document.getElementById('score').textContent = '0';
+            document.getElementById('passed').textContent = '0';
+            document.getElementById('timeDisplay').textContent = '00:00';
+            gameOverScreen.style.display = 'none';
+            
+            // Reset bird position
+            bird.style.top = (window.innerHeight / 2) + "px";
+            bird.className = "";
+            
+            // Force obstacle to reset immediately by triggering a new cycle
+            obstacle.style.animation = 'none';
+            hole.style.animation = 'none';
+            
+            // Small delay to ensure animation reset, then restart
+            setTimeout(() => {
+                obstacle.style.left = "100%";
+                hole.style.left = "100%";
+                obstacle.style.animation = 'obstacle-anim 3s infinite linear';
+                hole.style.animation = 'obstacle-anim 3s infinite linear';
+            }, 10);
+            
+            // Play restart sound
+            playSound(523.25, 0.3);
+        }
+
+        // Jumping function
+        function jump() {
+            if (!gameRunning || isJumping) return;
+            
+            isJumping = true;
+            bird.className = "jumping";
+            let jumpTimer = 0;
+            
+            // Play jump sound
+            playSound(659.25, 0.1); // E5
+            
+            let jumpInterval = setInterval(function () {
+                jumpTimer++;
+                let birdTop = parseInt(getComputedStyle(bird).getPropertyValue("top"));
+                
+                if (birdTop > 0 && jumpTimer < 15) {
+                    bird.style.top = birdTop - 8 + "px";
+                }
+                
+                if (jumpTimer > 20) {
+                    clearInterval(jumpInterval);
+                    isJumping = false;
+                    jumpTimer = 0;
+                    bird.className = "";
+                }
+            }, 16);
+        }
+
+        // Fast fall function
+        function fastFall() {
+            if (!gameRunning || isJumping) return;
+            
+            let birdTop = parseInt(getComputedStyle(bird).getPropertyValue("top"));
+            bird.style.top = birdTop + 20 + "px";
+            bird.className = "falling";
+            
+            // Play fall sound
+            playSound(330, 0.1); // E4
+        }
+
+        // Event listeners
+        document.addEventListener("click", jump);
+
+        document.addEventListener("keydown", (event) => {
+            switch(event.code) {
+                case 'Space':
+                case 'ArrowUp':
+                    event.preventDefault();
+                    jump();
+                    break;
+                case 'ArrowDown':
+                    event.preventDefault();
+                    fastFall();
+                    break;
+                case 'KeyR':
+                    if (!gameRunning) {
+                        restartGame();
+                    }
+                    break;
+            }
+        });
+
+        // Initialize game
+        bird.style.top = (window.innerHeight / 2) + "px";
+        
+        // Welcome sound
+        setTimeout(() => {
+            playSound(523.25, 0.2);
+            setTimeout(() => playSound(659.25, 0.2), 100);
+            setTimeout(() => playSound(783.99, 0.3), 200);
+        }, 500);
+    </script>
+</body>
 </html>
